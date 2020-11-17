@@ -1,0 +1,41 @@
+version: "3.8"
+services: 
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile.dev
+    volumes:
+      - type: bind
+        source: ./client
+        target: /app
+      - type: volume
+        target: /app/node_modules
+    ports: 
+      - 3000:3000
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile.dev
+    volumes: 
+      - type: bind
+        source: ./api/src
+        target: /app/src
+    ports: 
+      - 3001:80
+  db:
+    image: mongo
+    volumes: 
+      - type: volume
+        source: dbtest
+        target: /data/db
+  reverse-proxy:
+    build:
+      context: ./reverse-proxy
+      dockerfile: Dockerfile.dev
+    ports: 
+      - 80:80
+    depends_on: 
+      - api
+      - db
+volumes: 
+  dbtest:
