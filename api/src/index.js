@@ -1,21 +1,27 @@
 const express = require('express');
-const MongoClient = require('mongodb').MongoClient;
-let clientDb;
+const { MongoClient } = require('mongodb');
+
 let count;
-const MongUrl =
+const uri =
   process.env.NODE_ENV === 'production'
     ? `mongodb://${process.env.MONGO_USERNAME}:${process.env.MONGO_PWD}@db`
     : `mongodb://db`;
 
-MongoClient.connect(MongUrl, { useUnifiedTopology: true }, (err, client) => {
-  if (err) {
-    console.log(err);
-  } else {
+const client = new MongoClient(uri);
+async function run() {
+  try {
+    await client.connect();
+    await client.db('admin').command({ ping: 1 });
     console.log('CONNEXION DB OK !');
-    clientDb = client;
     count = client.db('test').collection('count');
+    if ((await count.countDocuments()) === 0) {
+      count.insertOne({ count: 0 });
+    }
+  } catch (err) {
+    console.log(err.stack);
   }
-});
+}
+run().catch(console.dir);
 
 const app = express();
 
@@ -43,8 +49,8 @@ process.addListener('SIGINT', () => {
     if (err) {
       process.exit(1);
     } else {
-      if (clientDb) {
-        clientDb.close((err) => process.exit(err ? 1 : 0));
+      if (client) {
+        client.close((err) => process.exit(err ? 1 : 0));
       } else {
         process.exit(0);
       }
