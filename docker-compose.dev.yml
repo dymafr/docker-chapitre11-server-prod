@@ -1,0 +1,40 @@
+services:
+  client:
+      build:
+        context: ./client
+        dockerfile: Dockerfile.dev
+      volumes:
+        - type: bind
+          source: ./client
+          target: /home/node
+        - type: volume
+          target: /home/node/node_modules
+      ports:
+        - "5173:5173"
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile.dev
+    volumes:
+      - type: bind
+        source: ./api/src
+        target: /app/src
+    ports:
+      - "3001:80"
+  db:
+    image: mongo:7
+    volumes:
+      - type: volume
+        source: dbtest
+        target: /data/db
+  reverse-proxy:
+    build:
+      context: ./reverseproxy
+      dockerfile: Dockerfile.dev
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+      - db
+  volumes:
+    dbtest:
